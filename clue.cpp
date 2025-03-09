@@ -34,34 +34,43 @@ struct Room {
 struct Board {
     std::map<std::string, std::vector<std::string>> adjacencyList;
 
-    Board() {
+    Board(const std::vector<Card>& rooms) {
         // Initialize the board layout (room connections)
         // Hallways are represented as strings like "Hall-Study"
-        adjacencyList = {
-            {"Hall", {"Hall-Lounge", "Hall-Billiard Room", "Hall-Study"}},
-            {"Lounge", {"Hall-Lounge", "Lounge-Dining Room"}},
-            {"Dining Room", {"Lounge-Dining Room", "Dining Room-Billiard Room", "Dining Room-Kitchen"}},
-            {"Kitchen", {"Dining Room-Kitchen", "Kitchen-Ballroom"}},
-            {"Ballroom", {"Kitchen-Ballroom", "Ballroom-Conservatory", "Ballroom-Billiard Room"}},
-            {"Conservatory", {"Ballroom-Conservatory", "Conservatory-Library"}},
-            {"Billiard Room", {"Hall-Billiard Room", "Dining Room-Billiard Room", "Ballroom-Billiard Room", "Billiard Room-Library"}},
-            {"Library", {"Billiard Room-Library", "Library-Study", "Conservatory-Library"}},
-            {"Study", {"Hall-Study", "Library-Study"}},
 
-            // Hallways connect two rooms
-            {"Hall-Lounge", {"Hall", "Lounge"}},
-            {"Hall-Study", {"Hall", "Study"}},
-            {"Hall-Billiard Room", {"Hall", "Billiard Room"}},
-            {"Lounge-Dining Room", {"Lounge", "Dining Room"}},
-            {"Dining Room-Kitchen", {"Dining Room", "Kitchen"}},
-            {"Dining Room-Billiard Room", {"Dining Room", "Billiard Room"}},
-            {"Kitchen-Ballroom", {"Kitchen", "Ballroom"}},
-            {"Ballroom-Conservatory", {"Ballroom", "Conservatory"}},
-            {"Ballroom-Billiard Room", {"Ballroom", "Billiard Room"}},
-            {"Billiard Room-Library", {"Billiard Room", "Library"}},
-            {"Library-Study", {"Library", "Study"}},
-            {"Conservatory-Library", {"Conservatory", "Library"}}
-        };
+        std::vector<std::string> roomNames;
+        for (const auto& room : rooms) {
+            roomNames.push_back(room.name);
+        }
+
+        // Assuming the first 9 rooms are the main rooms in the Clue layout
+        if (roomNames.size() >= 9) {
+            adjacencyList = {
+                {"Hall", {"Hall-" + roomNames[1], "Hall-" + roomNames[7], "Hall-" + roomNames[8]}},
+                {roomNames[1], {"Hall-" + roomNames[1], roomNames[1] + "-" + roomNames[2]}},
+                {roomNames[2], {roomNames[1] + "-" + roomNames[2], roomNames[2] + "-" + roomNames[3]}},
+                {roomNames[3], {roomNames[2] + "-" + roomNames[3], roomNames[3] + "-" + roomNames[4]}},
+                {roomNames[4], {roomNames[3] + "-" + roomNames[4], roomNames[4] + "-" + roomNames[5]}},
+                {roomNames[5], {roomNames[4] + "-" + roomNames[5], roomNames[5] + "-" + roomNames[6]}},
+                {roomNames[6], {roomNames[5] + "-" + roomNames[6], roomNames[6] + "-" + roomNames[7]}},
+                {roomNames[7], {"Hall-" + roomNames[7], roomNames[6] + "-" + roomNames[7], roomNames[7] + "-" + roomNames[8]}},
+                {roomNames[8], {"Hall-" + roomNames[8], roomNames[7] + "-" + roomNames[8]}},
+
+                // Hallways connect two rooms
+                {"Hall-" + roomNames[1], {"Hall", roomNames[1]}},
+                {"Hall-" + roomNames[7], {"Hall", roomNames[7]}},
+                {"Hall-" + roomNames[8], {"Hall", roomNames[8]}},
+                {roomNames[1] + "-" + roomNames[2], {roomNames[1], roomNames[2]}},
+                {roomNames[2] + "-" + roomNames[3], {roomNames[2], roomNames[3]}},
+                {roomNames[3] + "-" + roomNames[4], {roomNames[3], roomNames[4]}},
+                {roomNames[4] + "-" + roomNames[5], {roomNames[4], roomNames[5]}},
+                {roomNames[5] + "-" + roomNames[6], {roomNames[5], roomNames[6]}},
+                {roomNames[6] + "-" + roomNames[7], {roomNames[6], roomNames[7]}},
+                {roomNames[7] + "-" + roomNames[8], {roomNames[7], roomNames[8]}}
+            };
+        } else {
+            std::cerr << "Not enough rooms to initialize the board." << std::endl;
+        }
     }
 
     // Function to check if a move from one location to another is valid
@@ -127,38 +136,12 @@ struct Checklist {
 
 
 // Global lists of characters, weapons, and rooms
-std::vector<Card> characters = {
-    {"character", "Miss Scarlet"},
-    {"character", "Colonel Mustard"},
-    {"character", "Mrs. White"},
-    {"character", "Mr. Green"},
-    {"character", "Mrs. Peacock"},
-    {"character", "Professor Plum"}
-};
-
-std::vector<Card> weapons = {
-    {"weapon", "Candlestick"},
-    {"weapon", "Dagger"},
-    {"weapon", "Lead Pipe"},
-    {"weapon", "Revolver"},
-    {"weapon", "Rope"},
-    {"weapon", "Wrench"}
-};
-
-std::vector<Card> rooms = {
-    {"room", "Hall"},
-    {"room", "Lounge"},
-    {"room", "Dining Room"},
-    {"room", "Kitchen"},
-    {"room", "Ballroom"},
-    {"room", "Conservatory"},
-    {"room", "Billiard Room"},
-    {"room", "Library"},
-    {"room", "Study"}
-};
+std::vector<Card> characters;
+std::vector<Card> weapons;
+std::vector<Card> rooms;
 
 std::vector<Player> players;
-Board board; // Instantiate the board
+Board board(rooms); // Instantiate the board
 std::vector<Checklist> checklists;
 
 // Callback function to write the response data
@@ -292,8 +275,64 @@ std::vector<std::string> getWeaponsFromLLM() {
     return weapons;
 }
 
+// Function to get a list of characters from the LLM
+std::vector<std::string> getCharactersFromLLM() {
+    std::string prompt = "List 6 random characters suitable for a clue-like game, but not Miss Scarlet, Colonel Mustard, Mrs. White, Mr. Green, Mrs. Peacock, or Professor Plum, separated by commas. Give me only the comma separated list, nothing else.";
+    double temperature = 1.0;
+    std::string response = getLLMResponse(prompt, temperature);
+
+    // Extract the content from the JSON response
+    size_t contentStart = response.find("\"content\":\"");
+    if (contentStart == std::string::npos) {
+        throw std::runtime_error("Could not find 'content' in LLM response.");
+    }
+    contentStart += strlen("\"content\":\"");
+
+    // Look for the end of the content, allowing for variations in the closing sequence
+    size_t contentEnd = response.find("\"}]", contentStart);
+    if (contentEnd == std::string::npos) {
+        contentEnd = response.find("\"", contentStart); // Try to find the next quote
+        if (contentEnd == std::string::npos) {
+            throw std::runtime_error("Could not find end of 'content' in LLM response.");
+        }
+    }
+
+    std::string content = response.substr(contentStart, contentEnd - contentStart);
+
+    std::vector<std::string> characters;
+    std::stringstream ss(content);
+    std::string character;
+    while (std::getline(ss, character, ',')) {
+        // Remove leading/trailing whitespace
+        character.erase(0, character.find_first_not_of(" \t\n\r"));
+        character.erase(character.find_last_not_of(" \t\n\r") + 1);
+        characters.push_back(character);
+    }
+    return characters;
+}
 
 void initializeGame(int numPlayers) {
+    // Get lists of rooms, weapons, and characters from LLM
+    std::vector<std::string> llmRooms = getRoomsFromLLM();
+    std::vector<std::string> llmWeapons = getWeaponsFromLLM();
+    std::vector<std::string> llmCharacters = getCharactersFromLLM();
+
+    // Create the card vectors using the LLM-generated lists
+    rooms.clear();
+    for (const auto& roomName : llmRooms) {
+        rooms.push_back({"room", roomName});
+    }
+
+    weapons.clear();
+    for (const auto& weaponName : llmWeapons) {
+        weapons.push_back({"weapon", weaponName});
+    }
+
+    characters.clear();
+    for (const auto& characterName : llmCharacters) {
+        characters.push_back({"character", characterName});
+    }
+
     // Create the deck of cards
     std::vector<Card> deck;
     deck.insert(deck.end(), characters.begin(), characters.end());
@@ -313,23 +352,26 @@ void initializeGame(int numPlayers) {
     deck.erase(deck.begin(), deck.begin() + 3); // Remove solution cards from the deck
 
     // Create players
+    players.clear();
+    checklists.clear();
     for (int i = 0; i < numPlayers; ++i) {
         Player newPlayer;
         std::cout << "Enter name for player " << i + 1 << ": ";
         std::cin >> newPlayer.name;
         newPlayer.character = characters[i % characters.size()].name; // Assign characters in order for now
-        
-        // Assign initial locations (starting rooms)
-        if (newPlayer.character == "Miss Scarlet") newPlayer.location = "Hall-Lounge";
-        else if (newPlayer.character == "Colonel Mustard") newPlayer.location = "Lounge-Dining Room";
-        else if (newPlayer.character == "Mrs. White") newPlayer.location = "Kitchen-Ballroom";
-        else if (newPlayer.character == "Mr. Green") newPlayer.location = "Conservatory-Library";
-        else if (newPlayer.character == "Mrs. Peacock") newPlayer.location = "Library-Study";
-        else if (newPlayer.character == "Professor Plum") newPlayer.location = "Hall-Study";
+
+        // Assign initial locations (starting rooms) - use the first 3 rooms
+        if (llmRooms.size() >= 3) {
+            newPlayer.location = "Hall-" + llmRooms[i % 3]; // Assign to a hallway
+        } else {
+            newPlayer.location = "Hall"; // Default if not enough rooms
+        }
         
         players.push_back(newPlayer);
         checklists.emplace_back(characters, weapons, rooms); // Initialize checklist for each player
     }
+
+    board = Board(rooms); // Re-initialize the board with the new rooms
 
     // Deal the remaining cards to the players
     int playerIndex = 0;
@@ -340,20 +382,6 @@ void initializeGame(int numPlayers) {
     }
 
     board.displayBoard(players); // Display initial board state
-
-    // Get rooms from LLM and print them
-    std::vector<std::string> llmRooms = getRoomsFromLLM();
-    std::cout << "\nRooms from LLM:\n";
-    for (const auto& room : llmRooms) {
-        std::cout << room << "\n";
-    }
-
-    // Get weapons from LLM and print them
-    std::vector<std::string> llmWeapons = getWeaponsFromLLM();
-    std::cout << "\nWeapons from LLM:\n";
-    for (const auto& weapon : llmWeapons) {
-        std::cout << weapon << "\n";
-    }
 }
 
 // Function to get the player's move
@@ -372,8 +400,12 @@ void getPlayerMove(Player& player, int playerIndex) {
     switch (choice) {
         case 1: { // Move
             std::cout << "Available moves: ";
-            for (const std::string& neighbor : board.adjacencyList[player.location]) {
-                std::cout << neighbor << ", ";
+            if (board.adjacencyList.count(player.location)) {
+                for (const std::string& neighbor : board.adjacencyList[player.location]) {
+                    std::cout << neighbor << ", ";
+                }
+            } else {
+                std::cout << "No available moves from this location.";
             }
             std::cout << std::endl;
 
