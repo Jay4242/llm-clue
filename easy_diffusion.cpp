@@ -12,6 +12,8 @@
 #include <future>
 #include <chrono>
 #include <array> // Include array
+#include <sys/stat.h> // For creating directories
+#include <libgen.h> // For dirname
 
 #include <cpprest/http_client.h>
 #include <cpprest/filestream.h>
@@ -255,6 +257,28 @@ string extract_json_value(const string& json_stream, const string& key) {
             }
         }
         return value;
+    }
+}
+
+// Function to create a directory (including parent directories)
+bool createDirectory(const string& path) {
+    // Use stat to check if the directory already exists
+    struct stat info;
+    if (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR)) {
+        // Directory exists
+        return true;
+    }
+
+    // Use `mkdir -p` to create the directory and any necessary parent directories
+    string command = "mkdir -p \"" + path + "\"";
+    int result = system(command.c_str());
+
+    if (result == 0) {
+        cout << "Directory created successfully: " << path << endl;
+        return true;
+    } else {
+        cerr << "Error creating directory " << path << endl;
+        return false;
     }
 }
 
@@ -514,6 +538,19 @@ int main(int argc, char* argv[]) {
                     }
                 }
                 
+                // Extract directory path from the output filename
+                char *output_filename_cstr = new char[output_filename.length() + 1];
+                strcpy(output_filename_cstr, output_filename.c_str());
+                char *dir_name = dirname(output_filename_cstr);
+                string dir_path = dir_name;
+                delete[] output_filename_cstr;
+
+                // Create the directory if it doesn't exist
+                if (!createDirectory(dir_path)) {
+                    cerr << "Error: Could not create or access directory " << dir_path << endl;
+                    return 1;
+                }
+
                 // Write image data to file
                 ofstream image_file(output_filename, ios::binary);
                 image_file.write(reinterpret_cast<const char*>(out_bytes.data()), out_bytes.size());
