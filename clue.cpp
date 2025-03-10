@@ -481,7 +481,7 @@ std::vector<std::string> getWeaponsFromLLM() {
 
     for (const auto& weapon : weapons) {
 		// Generate a prompt for the weapon description
-		std::string prompt = "Describe a " + weapon + " in vivid detail, suitable for use in a stable diffusion prompt.";
+		std::string prompt = "Describe the physical appearance of a " + weapon + " in a concise manner, focusing on the base elements it is comprised of, as if describing it to an artist who is going to paint it. For example, a Sword: a long, slender blade made of polished steel, with a hilt of leather-wrapped wood and a brass guard. Do not prepend the description with any explanation or introduction. Just give the description.";
 		double temperature = 1.0;
 		std::string response = getLLMResponse(prompt, temperature);
 
@@ -505,13 +505,27 @@ std::vector<std::string> getWeaponsFromLLM() {
 
 		std::string weapon_description = response.substr(contentStart, contentEnd - contentStart);
 
-		// Remove quotes from the weapon description
+		// Remove quotes and newlines from the weapon description
 		weapon_description.erase(std::remove(weapon_description.begin(), weapon_description.end(), '\"'), weapon_description.end());
+		weapon_description.erase(std::remove(weapon_description.begin(), weapon_description.end(), '\n'), weapon_description.end());
+		weapon_description.erase(std::remove(weapon_description.begin(), weapon_description.end(), '\\'), weapon_description.end());
 
         std::string filename = weapons_dir + weapon + ".png";
-        std::string command = "./easy_diffusion \"" + weapon_description + "\" \"60\" \"256x256\" \"" + filename + "\"";
+        // Escape the quotes in the weapon description
+        std::string escaped_weapon_description = weapon_description;
+        size_t pos = 0;
+        while ((pos = escaped_weapon_description.find("\"", pos)) != std::string::npos) {
+            escaped_weapon_description.replace(pos, 1, "\\\"");
+            pos += 2;
+        }
+        std::string command = "./easy_diffusion \"" + escaped_weapon_description + "\" \"60\" \"256x256\" \"" + filename + "\"";
         std::cout << "Generating image for " << weapon << "..." << std::endl;
+        std::cout << "Command: " << command << std::endl; // Print the command
+        std::cout << "Weapon description: " << weapon_description << std::endl; // Print the weapon description
         std::string output = exec(command.c_str());
+		if (output.empty()) {
+			std::cerr << "Command failed: " << command << std::endl;
+		}
         std::cout << output << std::endl;
     }
 
