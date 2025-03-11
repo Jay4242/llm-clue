@@ -766,9 +766,16 @@ std::string getGameThemeFromLLM() {
 }
 
 void initializeGame(int numPlayers) {
-    // Get the game theme from the LLM
-    std::string gameTheme = getGameThemeFromLLM();
-	std::cout << "Game theme: " << gameTheme << std::endl;
+    // Prompt the user for a game theme
+    std::cout << "Enter a game theme (or leave blank for a random theme): ";
+    std::string gameTheme;
+    std::getline(std::cin, gameTheme);
+
+    // If the user entered a theme, use it. Otherwise, get the theme from the LLM.
+    if (gameTheme.empty()) {
+        gameTheme = getGameThemeFromLLM();
+    }
+    std::cout << "Game theme: " << gameTheme << std::endl;
 
     // Get lists of rooms, weapons, and characters from LLM
     std::vector<std::string> llmRooms = getRoomsFromLLM(gameTheme);
@@ -979,6 +986,7 @@ int main() {
     int numPlayers;
     std::cout << "Enter the number of players (2-6): ";
     std::cin >> numPlayers;
+    std::cin.ignore(); // Consume the newline character
 
     try {
         initializeGame(numPlayers);
