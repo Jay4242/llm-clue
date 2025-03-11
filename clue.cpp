@@ -414,6 +414,65 @@ std::string exec(const char* cmd) {
     return result;
 }
 
+// Function to generate images for the rooms
+void generateRoomImages(const std::vector<std::string>& rooms) {
+    std::string rooms_dir = "images/rooms/";
+    if (!createDirectory(rooms_dir)) {
+        std::cerr << "Could not create rooms directory!" << std::endl;
+        return;
+    }
+
+    for (const auto& room : rooms) {
+        // Generate a prompt for the room description
+        std::string prompt = "Describe the interior of a " + room + " in a Clue-like game setting. Be descriptive and include details about the furniture, decor, and atmosphere. Start with the room name, '" + room + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image.";
+        double temperature = 1.0;
+        std::string response = getLLMResponse(prompt, temperature);
+
+        // Extract the content from the JSON response
+        size_t contentStart = response.find("\"content\":\"");
+        if (contentStart == std::string::npos) {
+            std::cerr << "Could not find 'content' in LLM response." << std::endl;
+            continue;
+        }
+        contentStart += strlen("\"content\":\"");
+
+        // Look for the end of the content, allowing for variations in the closing sequence
+        size_t contentEnd = response.find("\"}]", contentStart);
+        if (contentEnd == std::string::npos) {
+            contentEnd = response.find("\"", contentStart); // Try to find the next quote
+            if (contentEnd == std::string::npos) {
+                std::cerr << "Could not find end of 'content' in LLM response." << std::endl;
+                continue;
+            }
+        }
+
+        std::string room_description = response.substr(contentStart, contentEnd - contentStart);
+
+        // Remove quotes and newlines from the room description
+        room_description.erase(std::remove(room_description.begin(), room_description.end(), '\"'), room_description.end());
+        room_description.erase(std::remove(room_description.begin(), room_description.end(), '\n'), room_description.end());
+        room_description.erase(std::remove(room_description.begin(), room_description.end(), '\\'), room_description.end());
+
+        std::string filename = rooms_dir + room + ".png";
+        // Escape the quotes in the room description
+        std::string escaped_room_description = room_description;
+        size_t pos = 0;
+        while ((pos = escaped_room_description.find("\"", pos)) != std::string::npos) {
+            escaped_room_description.replace(pos, 1, "\\\"");
+            pos += 2;
+        }
+        std::string command = "./easy_diffusion \"" + escaped_room_description + "\" \"25\" \"512x512\" \"" + filename + "\"";
+        std::cout << "Generating image for " << room << "..." << std::endl;
+        std::cout << "Command: " << command << std::endl; // Print the command
+        std::cout << "Room description: " << room_description << std::endl; // Print the room description
+        std::string output = exec(command.c_str());
+		if (output.empty()) {
+			std::cerr << "Command failed: " << command << std::endl;
+		}
+        std::cout << output << std::endl;
+    }
+}
+
 // Function to get a list of weapons from the LLM
 std::vector<std::string> getWeaponsFromLLM() {
     const int maxRetries = 3;
@@ -473,9 +532,10 @@ std::vector<std::string> getWeaponsFromLLM() {
         return {};
     }
 
-    // Call easy_diffusion.cpp for each weapon
+    // Create the weapons directory
     std::string weapons_dir = "images/weapons/";
-    if (!createDirectory(weapons_dir)) {
+    if (!createDirectory(weapons_dir))
+    {
         std::cerr << "Could not create weapons directory!" << std::endl;
     }
 
@@ -591,12 +651,77 @@ std::vector<std::string> getCharactersFromLLM() {
         return {};
     }
 
+    // Call easy_diffusion.cpp for each character
+    std::string characters_dir = "images/characters/";
+    if (!createDirectory(characters_dir))
+    {
+        std::cerr << "Could not create characters directory!" << std::endl;
+    }
+
+    for (const auto &character : characters)
+    {
+        // Generate a prompt for the character description
+        std::string prompt = "Describe the physical appearance of " + character + ". Describe them in short concise language as if you were describing them to a painter.  Such as  'A woman, sunglasses, a hat, brown coat.'  Only output your description and nothing else, no preamble or further explanation.";
+        double temperature = 1.0;
+        std::string response = getLLMResponse(prompt, temperature);
+
+        // Extract the content from the JSON response
+        size_t contentStart = response.find("\"content\":\"");
+        if (contentStart == std::string::npos)
+        {
+            std::cerr << "Could not find 'content' in LLM response." << std::endl;
+            continue;
+        }
+        contentStart += strlen("\"content\":\"");
+
+        // Look for the end of the content, allowing for variations in the closing sequence
+        size_t contentEnd = response.find("\"}]", contentStart);
+        if (contentEnd == std::string::npos)
+        {
+            contentEnd = response.find("\"", contentStart); // Try to find the next quote
+            if (contentEnd == std::string::npos)
+            {
+                std::cerr << "Could not find end of 'content' in LLM response." << std::endl;
+                continue;
+            }
+        }
+
+        std::string character_description = response.substr(contentStart, contentEnd - contentStart);
+
+        // Remove quotes and newlines from the character description
+        character_description.erase(std::remove(character_description.begin(), character_description.end(), '\"'), character_description.end());
+        character_description.erase(std::remove(character_description.begin(), character_description.end(), '\n'), character_description.end());
+        character_description.erase(std::remove(character_description.begin(), character_description.end(), '\\'), character_description.end());
+
+        std::string filename = characters_dir + character + ".png";
+        // Escape the quotes in the character description
+        std::string escaped_character_description = character_description;
+        size_t pos = 0;
+        while ((pos = escaped_character_description.find("\"", pos)) != std::string::npos)
+        {
+            escaped_character_description.replace(pos, 1, "\\\"");
+            pos += 2;
+        }
+        std::string command = "./easy_diffusion \"" + escaped_character_description + "\" \"25\" \"512x512\" \"" + filename + "\"";
+        std::cout << "Generating image for " << character << "..." << std::endl;
+        std::cout << "Command: " << command << std::endl; // Print the command
+        std::cout << "Character description: " << character_description << std::endl; // Print the character description
+        std::string output = exec(command.c_str());
+		if (output.empty()) {
+			std::cerr << "Command failed: " << command << std::endl;
+		}
+        std::cout << output << std::endl;
+    }
+
     return characters;
 }
 
 void initializeGame(int numPlayers) {
     // Get lists of rooms, weapons, and characters from LLM
     std::vector<std::string> llmRooms = getRoomsFromLLM();
+
+    // Generate images for the rooms
+    generateRoomImages(llmRooms);
     std::vector<std::string> llmWeapons = getWeaponsFromLLM();
     std::vector<std::string> llmCharacters = getCharactersFromLLM();
 
