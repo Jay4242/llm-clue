@@ -87,3 +87,8 @@ g++ easy_diffusion.cpp -o easy_diffusion -lcpprest -lpthread -lz -lcrypto -lssl
 *   The server addresses for both the stable diffusion server (`SERVER_ADDRESS`) and the LLM server (`LLM_SERVER_ADDRESS`) are defined as constants in the `easy_diffusion.cpp` code and can be modified.
 *   The `clue` game relies on the LLM server address.
 *   The stable diffusion program will save the output to the directory specified in the output filename. If the directory does not exist, it will be created.
+
+
+### Screenshot
+
+![LLM still being bad at Stable Diffusion](https://github.com/Jay4242/llm-clue/blob/3e98a53a194533353af4c9a51cf04faf94ad723c/image.png)
