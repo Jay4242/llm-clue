@@ -775,10 +775,8 @@ void initializeGame(int numPlayers) {
     std::vector<std::string> llmWeapons = getWeaponsFromLLM(gameTheme);
     std::vector<std::string> llmCharacters = getCharactersFromLLM(gameTheme);
 
-    // Generate images for the rooms
+    // Generate images for the rooms *after* getting the room names
     generateRoomImages(llmRooms);
-    llmWeapons = getWeaponsFromLLM(gameTheme);
-    llmCharacters = getCharactersFromLLM(gameTheme);
 
     // Check if the LLM calls were successful
     if (llmRooms.empty() || llmWeapons.empty() || llmCharacters.empty()) {
