@@ -481,7 +481,7 @@ std::vector<std::string> getWeaponsFromLLM() {
 
     for (const auto& weapon : weapons) {
 		// Generate a prompt for the weapon description
-		std::string prompt = "Describe the physical appearance of a " + weapon + " in a concise manner, focusing on the base elements it is comprised of, as if describing it to an artist who is going to paint it. For example, a Sword: a long, slender blade made of polished steel, with a hilt of leather-wrapped wood and a brass guard. Do not prepend the description with any explanation or introduction. Just give the description.";
+		std::string prompt = "Describe the physical appearance of a " + weapon + ". Start with '" + weapon + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image. For example, if the item was a baseball bat the description could be as simple as 'baseball bat, wooden'";
 		double temperature = 1.0;
 		std::string response = getLLMResponse(prompt, temperature);
 
@@ -518,7 +518,7 @@ std::vector<std::string> getWeaponsFromLLM() {
             escaped_weapon_description.replace(pos, 1, "\\\"");
             pos += 2;
         }
-        std::string command = "./easy_diffusion \"" + escaped_weapon_description + "\" \"60\" \"256x256\" \"" + filename + "\"";
+        std::string command = "./easy_diffusion \"" + escaped_weapon_description + "\" \"25\" \"512x512\" \"" + filename + "\"";
         std::cout << "Generating image for " << weapon << "..." << std::endl;
         std::cout << "Command: " << command << std::endl; // Print the command
         std::cout << "Weapon description: " << weapon_description << std::endl; // Print the weapon description
