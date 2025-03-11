@@ -722,7 +722,7 @@ std::string getGameThemeFromLLM() {
     int retryCount = 0;
 
     while (retryCount < maxRetries) {
-        std::string prompt = "Suggest a theme for a Clue-like game.  Give me a one or two word answer and nothing else.";
+        std::string prompt = "Suggest a themed place for a Clue-like game.  Do not include the word 'Mansion' as that is too similar to the original. Be creative!  Give me a one or two word answer and nothing else, no explanation or pramble, only the themed place.";
         double temperature = 1.5;
         std::string response = getLLMResponse(prompt, temperature);
 
