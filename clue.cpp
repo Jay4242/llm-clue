@@ -339,13 +339,13 @@ void validateLLMResponseCount(const std::vector<std::string>& items, size_t expe
 }
 
 // Function to get a list of rooms from the LLM
-std::vector<std::string> getRoomsFromLLM() {
+std::vector<std::string> getRoomsFromLLM(const std::string& gameTheme) {
     const int maxRetries = 3;
     int retryCount = 0;
     std::vector<std::string> rooms;
 
     while (retryCount < maxRetries) {
-        std::string prompt = "List 9 random rooms suitable for a clue-like game, but not Hall, Lounge, Dining Room, Kitchen, Ballroom, Conservatory, Billiard Room, Library, or Study, separated by commas. Give me only the comma separated list, nothing else.";
+        std::string prompt = "List 9 random rooms suitable for a " + gameTheme + " themed clue-like game, but not Hall, Lounge, Dining Room, Kitchen, Ballroom, Conservatory, Billiard Room, Library, or Study, separated by commas. Give me only the comma separated list, nothing else.";
         double temperature = 1.0;
         std::string response = getLLMResponse(prompt, temperature);
 
@@ -424,7 +424,7 @@ void generateRoomImages(const std::vector<std::string>& rooms) {
 
     for (const auto& room : rooms) {
         // Generate a prompt for the room description
-        std::string prompt = "Describe the interior of a " + room + " in a Clue-like game setting. Be descriptive and include details about the furniture, decor, and atmosphere. Start with the room name, '" + room + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image.";
+        std::string prompt = "Describe the interior of a " + room + " in a Clue-like game setting. Be descriptive and include details about the furniture, decor, and atmosphere. Start with the room name, '" + room + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image.  Keep everything on one line and only include the description, no preamble or further explanation.";
         double temperature = 1.0;
         std::string response = getLLMResponse(prompt, temperature);
 
@@ -474,13 +474,13 @@ void generateRoomImages(const std::vector<std::string>& rooms) {
 }
 
 // Function to get a list of weapons from the LLM
-std::vector<std::string> getWeaponsFromLLM() {
+std::vector<std::string> getWeaponsFromLLM(const std::string& gameTheme) {
     const int maxRetries = 3;
     int retryCount = 0;
     std::vector<std::string> weapons;
 
     while (retryCount < maxRetries) {
-        std::string prompt = "List 6 random weapons suitable for a clue-like game, but not Candlestick, Dagger, Lead Pipe, Revolver, Rope, or Wrench, separated by commas. Give me only the comma separated list, nothing else.";
+        std::string prompt = "List 6 random weapons suitable for a " + gameTheme + " themed clue-like game, but not Candlestick, Dagger, Lead Pipe, Revolver, Rope, or Wrench, separated by commas. Give me only the comma separated list, nothing else.";
         double temperature = 1.0;
         std::string response = getLLMResponse(prompt, temperature);
 
@@ -593,13 +593,13 @@ std::vector<std::string> getWeaponsFromLLM() {
 }
 
 // Function to get a list of characters from the LLM
-std::vector<std::string> getCharactersFromLLM() {
+std::vector<std::string> getCharactersFromLLM(const std::string& gameTheme) {
     const int maxRetries = 3;
     int retryCount = 0;
     std::vector<std::string> characters;
 
     while (retryCount < maxRetries) {
-        std::string prompt = "List 6 random characters suitable for a clue-like game, but not Miss Scarlet, Colonel Mustard, Mrs. White, Mr. Green, Mrs. Peacock, or Professor Plum, separated by commas. Give me only the comma separated list, nothing else.";
+        std::string prompt = "List 6 random characters suitable for a " + gameTheme + " themed clue-like game, but not Miss Scarlet, Colonel Mustard, Mrs. White, Mr. Green, Mrs. Peacock, or Professor Plum, separated by commas. Give me only the comma separated list, nothing else.";
         double temperature = 1.0;
         std::string response = getLLMResponse(prompt, temperature);
 
@@ -652,8 +652,8 @@ std::vector<std::string> getCharactersFromLLM() {
     }
 
     // Call easy_diffusion.cpp for each character
-    std::string characters_dir = "images/characters/";
-    if (!createDirectory(characters_dir))
+	std::string characters_dir = "images/characters/";
+	if (!createDirectory(characters_dir))
     {
         std::cerr << "Could not create characters directory!" << std::endl;
     }
@@ -716,14 +716,69 @@ std::vector<std::string> getCharactersFromLLM() {
     return characters;
 }
 
+// Function to get an overall theme for the game from the LLM
+std::string getGameThemeFromLLM() {
+    const int maxRetries = 3;
+    int retryCount = 0;
+
+    while (retryCount < maxRetries) {
+        std::string prompt = "Suggest a theme for a Clue-like game.  Give me a one or two word answer and nothing else.";
+        double temperature = 1.5;
+        std::string response = getLLMResponse(prompt, temperature);
+
+        // Extract the content from the JSON response
+        size_t contentStart = response.find("\"content\":\"");
+        if (contentStart == std::string::npos) {
+            std::cerr << "Could not find 'content' in LLM response (retry " << retryCount + 1 << "/" << maxRetries << ")." << std::endl;
+            retryCount++;
+            continue;
+        }
+        contentStart += strlen("\"content\":\"");
+
+        // Look for the end of the content, allowing for variations in the closing sequence
+        size_t contentEnd = response.find("\"}]", contentStart);
+        if (contentEnd == std::string::npos) {
+            contentEnd = response.find("\"", contentStart); // Try to find the next quote
+            if (contentEnd == std::string::npos) {
+                std::cerr << "Could not find end of 'content' in LLM response (retry " << retryCount + 1 << "/" << maxRetries << ")." << std::endl;
+                retryCount++;
+                continue;
+            }
+        }
+
+        std::string content = response.substr(contentStart, contentEnd - contentStart);
+
+        // Remove leading/trailing whitespace
+        content.erase(0, content.find_first_not_of(" \t\n\r"));
+        content.erase(content.find_last_not_of(" \t\n\r") + 1);
+
+        if (!content.empty()) {
+            return content; // Return the theme if found
+        } else {
+            std::cerr << "LLM returned an empty theme (retry " << retryCount + 1 << "/" << maxRetries << ")." << std::endl;
+            retryCount++;
+        }
+    }
+
+    // If max retries reached, return a default theme
+    std::cerr << "Max retries reached for getting game theme. Using default theme." << std::endl;
+    return "Mystery";
+}
+
 void initializeGame(int numPlayers) {
+    // Get the game theme from the LLM
+    std::string gameTheme = getGameThemeFromLLM();
+	std::cout << "Game theme: " << gameTheme << std::endl;
+
     // Get lists of rooms, weapons, and characters from LLM
-    std::vector<std::string> llmRooms = getRoomsFromLLM();
+    std::vector<std::string> llmRooms = getRoomsFromLLM(gameTheme);
+    std::vector<std::string> llmWeapons = getWeaponsFromLLM(gameTheme);
+    std::vector<std::string> llmCharacters = getCharactersFromLLM(gameTheme);
 
     // Generate images for the rooms
     generateRoomImages(llmRooms);
-    std::vector<std::string> llmWeapons = getWeaponsFromLLM();
-    std::vector<std::string> llmCharacters = getCharactersFromLLM();
+    llmWeapons = getWeaponsFromLLM(gameTheme);
+    llmCharacters = getCharactersFromLLM(gameTheme);
 
     // Check if the LLM calls were successful
     if (llmRooms.empty() || llmWeapons.empty() || llmCharacters.empty()) {
@@ -921,8 +976,11 @@ void playGame() {
 }
 
 int main() {
+    // Get the game theme from the LLM
+    std::string gameTheme = getGameThemeFromLLM();
+
     // Get lists of rooms from LLM *before* initializing board
-    std::vector<std::string> llmRooms = getRoomsFromLLM();
+    std::vector<std::string> llmRooms = getRoomsFromLLM(gameTheme);
     rooms.clear();
     for (const auto& roomName : llmRooms) {
         rooms.push_back({"room", roomName});
