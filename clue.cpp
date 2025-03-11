@@ -415,7 +415,7 @@ std::string exec(const char* cmd) {
 }
 
 // Function to generate images for the rooms
-void generateRoomImages(const std::vector<std::string>& rooms) {
+void generateRoomImages(const std::vector<std::string>& rooms, const std::string& gameTheme) {
     std::string rooms_dir = "images/rooms/";
     if (!createDirectory(rooms_dir)) {
         std::cerr << "Could not create rooms directory!" << std::endl;
@@ -424,7 +424,7 @@ void generateRoomImages(const std::vector<std::string>& rooms) {
 
     for (const auto& room : rooms) {
         // Generate a prompt for the room description
-        std::string prompt = "Describe the interior of a " + room + " in a Clue-like game setting. Be descriptive and include details about the furniture, decor, and atmosphere. Start with the room name, '" + room + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image.  Keep everything on one line and only include the description, no preamble or further explanation.";
+        std::string prompt = "Describe the interior of a " + room + " in a " + gameTheme + " themed Clue-like game setting. Be descriptive and include details about the furniture, decor, and atmosphere. Start with the room name, '" + room + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image.  Keep everything on one line and only include the description, no preamble or further explanation.";
         double temperature = 1.0;
         std::string response = getLLMResponse(prompt, temperature);
 
@@ -776,7 +776,7 @@ void initializeGame(int numPlayers) {
     std::vector<std::string> llmCharacters = getCharactersFromLLM(gameTheme);
 
     // Generate images for the rooms *after* getting the room names
-    generateRoomImages(llmRooms);
+    generateRoomImages(llmRooms, gameTheme);
 
     // Check if the LLM calls were successful
     if (llmRooms.empty() || llmWeapons.empty() || llmCharacters.empty()) {
@@ -975,14 +975,6 @@ void playGame() {
 
 int main() {
     // Get the game theme from the LLM
-    std::string gameTheme = getGameThemeFromLLM();
-
-    // Get lists of rooms from LLM *before* initializing board
-    std::vector<std::string> llmRooms = getRoomsFromLLM(gameTheme);
-    rooms.clear();
-    for (const auto& roomName : llmRooms) {
-        rooms.push_back({"room", roomName});
-    }
 
     int numPlayers;
     std::cout << "Enter the number of players (2-6): ";
