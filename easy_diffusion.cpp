@@ -167,7 +167,8 @@ string generate_character() {
 }
 
 // Function to extract the task ID from the JSON response
-string extract_task_id(const string& json_response) {
+string extract_task_id(const string &json_response)
+{
     string task_id;
     size_t task_pos = json_response.find("\"task\":");
     if (task_pos != string::npos) {
@@ -525,9 +526,11 @@ int main(int argc, char* argv[]) {
 
                 int val = 0, valb = -8;
                 for (unsigned char c : in_bytes) {
-                    if (c == '=') break;
-                    int index = base64_chars.find(c);
-                    if (index == std::string::npos) continue;
+                    if (c == '=')
+                        break;
+                    size_t index = base64_chars.find(c);
+                    if (index == std::string::npos)
+                        continue;
 
                     val = (val << 6) | index;
                     valb += 6;
