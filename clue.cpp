@@ -541,7 +541,7 @@ std::vector<std::string> getWeaponsFromLLM(const std::string& gameTheme) {
 
     for (const auto& weapon : weapons) {
 		// Generate a prompt for the weapon description
-		std::string prompt = "Describe the physical appearance of a " + weapon + ". Start with '" + weapon + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image. For example, if the item was a baseball bat the description could be as simple as 'baseball bat, wooden'";
+		std::string prompt = "Describe the physical appearance of a " + weapon + ". Start with '" + weapon + ", ' and then use short, concise language punctuated with commas to describe the things that should be in the image. Also mention 'centered in frame' to make sure the entire item is pictured. For example, if the item was a baseball bat the description could be as simple as 'baseball bat, wooden, centered in frame'";
 		double temperature = 1.0;
 		std::string response = getLLMResponse(prompt, temperature);
 
