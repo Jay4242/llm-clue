@@ -92,3 +92,62 @@ g++ easy_diffusion.cpp -o easy_diffusion -lcpprest -lpthread -lz -lcrypto -lssl
 ### Screenshot
 
 ![LLM still being bad at Stable Diffusion](https://github.com/Jay4242/llm-clue/blob/3e98a53a194533353af4c9a51cf04faf94ad723c/image.png)
+
+
+### Mermaid Diagram
+
+```mermaid
+        graph TD
+    A[Start] --> B{User Input Number of Players}
+    B -->|2-6| C{User Input Game Theme?}
+    C -->|Yes| D[Get Game Theme from User Input]
+    C -->|No| D[Get Game Theme from LLM]
+    D --> E[Get Rooms from LLM]
+    D --> F[Get Weapons from LLM]
+    D --> G[Get Characters from LLM]
+    E --> H[Generate Room Images]
+    F --> I[Generate Weapon Images]
+    G --> J[Generate Character Images]
+    H --> K[Create Card Vectors with LLM Generated Lists]
+    I --> K
+    J --> K
+    K --> L[Shuffle Deck and Select Solution]
+    L --> M[Create Players and Assign Initial Locations]
+    M --> N[Deal Remaining Cards to Players]
+    N --> O[Display Initial Board State]
+    O --> P{Main Game Loop}
+    P --> Q[Player's Turn]
+    Q --> R[Get Player's Move]
+    R --> S{Move Valid?}
+    S -->|Yes| T[Update Player Location]
+    S -->|No| T[Invalid Move]
+    T --> U[Display Board State]
+    P -->|Next Player| U
+    P -->|Game Over?| V[End Game]
+    R --> W[Make a Suggestion]
+    W --> X[Check for Disproving Evidence]
+    X --> Y[Display Board State]
+    P -->|Next Player| Y
+    R --> Z[Make an Accusation]
+    Z --> AA[Check Accusation]
+    AA --> AB[Accusation Correct?]
+    AB -->|Yes| AC[Player Wins]
+    AB -->|No| AC[Player Eliminated]
+    AC --> AD[Display Board State]
+    P -->|Next Player| AD
+    R --> AE[Show Checklist]
+    AE --> AF[Display Board State]
+    P -->|Next Player| AF
+    R --> AG[End Turn]
+    AG --> AH[Display Board State]
+    P -->|Next Player| AH
+    H -->|easy_diffusion.cpp| H1[Generate Room Image]
+    I -->|easy_diffusion.cpp| I1[Generate Weapon Image]
+    J -->|easy_diffusion.cpp| J1[Generate Character Image]
+    H1 --> H2[Save Room Image]
+    I1 --> I2[Save Weapon Image]
+    J1 --> J2[Save Character Image]
+    H2 --> H
+    I2 --> I
+    J2 --> J
+```
